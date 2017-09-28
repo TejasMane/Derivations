@@ -71,7 +71,7 @@ PairVashishtati::PairVashishtati(LAMMPS *lmp) : Pair(lmp)
   t0 = update->ntimestep;  // timestep of original/starting coordinates
 
   // SET THE TIME FOR TI METHOD HERE
-  t1 = t0 + 10000 ;
+  t1 = t0 + 200000 ;
   t_switch = t1 - t0 ;
 
 
@@ -127,9 +127,9 @@ void PairVashishtati::compute(int eflag, int vflag)
   if (t % 1000 ==0)
   {
   	cout << "lambda is "<< lambda <<"\n" ;
-  	cout << "t is "<< t <<"\n" ;
-  	cout << "t0 is "<< t0 <<"\n" ;
-  	cout << "t1 is "<< t1 <<"\n" ;
+  	// cout << "t is "<< t <<"\n" ;
+  	// cout << "t0 is "<< t0 <<"\n" ;
+  	// cout << "t1 is "<< t1 <<"\n" ;
   	// cout << "r_switch is "<< r_switch <<"\n" ;
 
 
@@ -643,7 +643,7 @@ void PairVashishtati::twobody(Param *param, double rsq, double &fforce,
 
 				param->dvrc and param->zizj are of opposite signs
 	*/
-  double r,rinvsq,r4inv,r6inv,reta,lam1r,lam4r,vc2,vc3;
+  double r,rinvsq,r4inv,r6inv,reta,lam1r,lam4r,vc2,vc3, tej_vc2, tej_vc3;
 
   r = sqrt(rsq);
   rinvsq = 1.0/rsq;
@@ -656,11 +656,15 @@ void PairVashishtati::twobody(Param *param, double rsq, double &fforce,
   double frac = 0.9 ;
 
 
-	vc2 = (param->zizj -  lambda * param->zizj) * exp(-lam1r)/r; // Zi * Zj * (1/r) * e^{-r/\lamda}
 
 
-  vc3 = (param->mbigd - lambda * param->mbigd) * r4inv * exp(-lam4r); // Dij * (1/r^{4}) * e^{-r/\xi} //ATTRACTIVE
+	vc2 = (param->zizj) * exp(-lam1r)/r; // Zi * Zj * (1/r) * e^{-r/\lamda}
 
+  tej_vc2 = (param->zizj -  lambda * param->zizj) * exp(-lam1r)/r; // Zi * Zj * (1/r) * e^{-r/\lamda}
+
+  vc3 = (param->mbigd) * r4inv * exp(-lam4r); // Dij * (1/r^{4}) * e^{-r/\xi} //ATTRACTIVE
+
+  tej_vc3 = (param->mbigd - lambda * param->mbigd) * r4inv * exp(-lam4r); // Dij * (1/r^{4}) * e^{-r/\xi} //ATTRACTIVE
 
 
   double tej_dvrc = (param->vrcc3 - lambda * param->vrcc3) * (4.0*param->rcinv+param->lam4inv)
@@ -669,17 +673,17 @@ void PairVashishtati::twobody(Param *param, double rsq, double &fforce,
       - (param->vrcc2 - lambda * param->vrcc2) * (param->rcinv+param->lam1inv) ; 
 
 
-  double tej_c0 = param->cut* tej_dvrc  
-         - (param->bigh- frac * lambda * param->bigh) *param->rceta +
-      (param->zizj - lambda * param->zizj) * param->rcinv *
-      exp(-param->lam1rc) - (param->mbigd - lambda * param->mbigd) * param->rc4inv *
-      exp(-param->lam4rc) -
-      (param->bigw - lambda * param->bigw)*param->rc6inv; 
+  double tej_dvrc_eng = - (1-frac) * param->heta * param->rceta*param->rcinv ;
+
+
+  double tej_c0_eng = param->cut* tej_dvrc_eng  
+         - ( (1- frac) * lambda * param->bigh) *param->rceta +
+     
 
 
   fforce = (( tej_dvrc )*r  // Repulsive or positibe
-        - (	4.0*vc3 + lam4r*vc3+(param->big6w - lambda * param->big6w)*r6inv
-          		 - (param->heta - frac * lambda * param->heta)*reta - vc2 - lam1r*vc2
+        - (	4.0*tej_vc3 + lam4r*tej_vc3+(param->big6w - lambda * param->big6w)*r6inv
+          		 - (param->heta - frac * lambda * param->heta)*reta - tej_vc2 - lam1r*tej_vc2
           )
         ) * rinvsq; // (dvrc / r) - ()/r^2
 
@@ -687,9 +691,11 @@ void PairVashishtati::twobody(Param *param, double rsq, double &fforce,
 
 
 
-  if (eflag) eng = (param->bigh - frac * lambda * param->bigh)*reta
-           + vc2 - vc3 - (param->bigw - lambda * param->bigw)*r6inv
-           - r*param->dvrc + tej_c0;
+  if (eflag) eng = (param->bigh)*reta
+           + vc2 - vc3 - (param->bigw )*r6inv
+           - r*param->dvrc + param->c0 // Now subtracting the energy of reference state
+           - (0.1 * (param->bigh)*reta)
+           - r * tej_dvrc_eng + tej_c0_eng;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -755,7 +761,7 @@ void PairVashishtati::threebody(Param *paramij, Param *paramik, Param *paramijk,
 
   // cout << " facrad is " << facrad << " \n " ;
 
-  if (eflag) eng = facrad;
+  if (eflag) eng = facrad + lambda * paramijk->big2b * facexp * delcs/pcsinvsq ;
 }
 
 /* ----------------------------------------------------------------------
