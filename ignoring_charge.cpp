@@ -71,7 +71,7 @@ PairVashishtati::PairVashishtati(LAMMPS *lmp) : Pair(lmp)
   t0 = update->ntimestep;  // timestep of original/starting coordinates
 
   // SET THE TIME FOR TI METHOD HERE
-  t1 = t0 + 200000 ;
+  t1 = t0 + 10000 ;
   t_switch = t1 - t0 ;
 
 
@@ -694,8 +694,9 @@ void PairVashishtati::twobody(Param *param, double rsq, double &fforce,
   if (eflag) eng = (param->bigh)*reta
            + vc2 - vc3 - (param->bigw )*r6inv
            - r*param->dvrc + param->c0 // Now subtracting the energy of reference state
-           - (0.1 * (param->bigh)*reta)
-           - r * tej_dvrc_eng + tej_c0_eng;
+           - (  0.1 * (param->bigh)*reta
+                - r * tej_dvrc_eng + tej_c0_eng
+             );
 }
 
 /* ---------------------------------------------------------------------- */
