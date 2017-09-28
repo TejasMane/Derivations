@@ -673,17 +673,17 @@ void PairVashishtati::twobody(Param *param, double rsq, double &fforce,
       - (param->vrcc2 - lambda * param->vrcc2) * (param->rcinv+param->lam1inv) ; 
 
 
-  double tej_dvrc_eng = - (1-frac) * param->heta * param->rceta*param->rcinv ;
+  double tej_dvrc_eng = - (1-frac) * param->heta * param->rceta * param->rcinv ;
 
 
   double tej_c0_eng = param->cut* tej_dvrc_eng  
-         - ( (1- frac) * lambda * param->bigh) *param->rceta +
+         - ( (1- frac)  * param->bigh) *param->rceta ;
      
 
 
   fforce = (( tej_dvrc )*r  // Repulsive or positibe
-        - (	4.0*tej_vc3 + lam4r*tej_vc3+(param->big6w - lambda * param->big6w)*r6inv
-          		 - (param->heta - frac * lambda * param->heta)*reta - tej_vc2 - lam1r*tej_vc2
+        - (	4.0 * tej_vc3 + lam4r * tej_vc3 + (param->big6w - lambda * param->big6w) * r6inv
+          		 - (param->heta - frac * lambda * param->heta) * reta - tej_vc2 - lam1r * tej_vc2
           )
         ) * rinvsq; // (dvrc / r) - ()/r^2
 
